@@ -40,6 +40,32 @@ Os arquivos são salvos em //Textures/ (pasta relativa ao .blend).
 - “Save the .blend file”: o bake precisa de um arquivo salvo.
 - Sem materiais: o add-on ignora slots vazios ou não usados.
 
+## Teste headless (smoke test)
+
+Requer Blender instalado localmente.
+
+1. Defina a variável de ambiente `BLENDER_BIN` apontando para o executável do Blender.
+2. Execute o script:
+	- `python scripts/run_smoke_test.py`
+
+O teste cria um cubo, aplica Grungit em modo rápido e valida a presença do NodeGroup.
+
+## Benchmark de performance (quick mode)
+
+1. Defina `BLENDER_BIN` apontando para o executável do Blender.
+2. Execute:
+	- `python scripts/run_perf_benchmark.py`
+
+O script imprime um JSON com tempo para cena pequena (1 objeto) e grande (25 objetos).
+
+## E2E bake headless (Cycles)
+
+1. Defina `BLENDER_BIN` apontando para o executável do Blender.
+2. Execute:
+	- `python scripts/run_e2e_bake_test.py`
+
+O teste salva um .blend temporário, executa bake real e valida o arquivo *_Grungit.exr.
+
 ## Estrutura do projeto
 
 - grungit/grungit.py: operador principal e bake de grunge

@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget xz-utils
+          wget -q https://download.blender.org/release/Blender4.1/blender-4.1.2-linux-x64.tar.xz -O blender.tar.xz
+          tar -xf blender.tar.xz
+          echo "BLENDER_BIN=$(pwd)/blender-4.1.2-linux-x64/blender" >> $GITHUB_ENV
+
+      - name: Run smoke test
+        run: |
+          python scripts/run_smoke_test.py
+
+      - name: Run E2E bake test
+        run: |
+          python scripts/run_e2e_bake_test.py
