@@ -76,24 +76,27 @@ Marcar o que foi efetivamente testado:
 - **Versão mínima suportada (declarada):** 5.0+ ([README.md](README.md#L5-L8), [grungit/__init__.py](grungit/__init__.py#L1-L10))
 - **Versões testadas:**
   - [ ] LTS: **NÃO VERIFICADO**
-  - [ ] Última estável: **NÃO VERIFICADO**
+  - [x] Última estável: 5.0.0 (Windows)
   - [ ] Beta/Alpha (opcional): **NÃO VERIFICADO**
 
 ### 3.2 Sistemas operacionais
-- [x] Windows (versão: **não informada**)
+- [x] Windows (versão: Windows 11 Pro 10.0.26100)
 - [ ] Linux
 - [ ] macOS
 
 ### 3.3 Hardware
-- **CPU:** **NÃO VERIFICADO**
-- **RAM:** **NÃO VERIFICADO**
-- **GPU/Driver:** **NÃO VERIFICADO**
-- **Resolução/escala UI:** **NÃO VERIFICADO**
+**CPU:** AMD Ryzen 5 PRO 8500GE
+**RAM:** 32 GB
+**GPU/Driver:** AMD Radeon 740M Graphics
+**Resolução/escala UI:** **NÃO VERIFICADO**
 
 ### 3.4 Como reproduzir o ambiente
 - **Fonte do add-on:** repositório local / zip
 - **Procedimento de instalação reproduzível:** descrito no README ([README.md](README.md#L11-L15))
-- **Comandos/scripts usados:** **NÃO VERIFICADO**
+- **Comandos/scripts usados:**
+  - `python scripts/run_smoke_test.py`
+  - `python scripts/run_perf_benchmark.py`
+  - `python scripts/run_e2e_bake_test.py`
 
 ---
 
@@ -109,7 +112,7 @@ Marcar o que foi efetivamente testado:
 ## 5) Avaliação funcional (E2E) — testes e evidências
 
 ### 5.1 Fluxos críticos (3–7)
-**PARCIAL:** smoke test e E2E bake headless executados (Cycles). Ainda faltam cenários adicionais.
+**PARCIAL:** smoke test, E2E multi-objeto, E2E complexo, E2E realista e E2E com asset externo executados.
 
 ### 5.2 Regressões e compatibilidade
 - **O add-on altera configurações globais do Blender?** não observado no código.
@@ -180,12 +183,14 @@ Marcar o que foi efetivamente testado:
 
 ## 8) Performance (métrica antes/depois)
 
-**PARCIAL:** benchmark headless executado (quick mode). Valores registrados abaixo.
+**PARCIAL:** benchmark headless executado (quick mode). Valores p50/p95 abaixo (n=4).
 
 | Cenário | Medida | Antes | Depois | Delta | Status |
 |---|---:|---:|---:|---:|---|
-| Pequeno | Tempo (s) |  | 0.0359 |  |  |
-| Grande | Tempo (s) |  | 0.0078 |  |  |
+| Pequeno | Tempo p50 (s) |  | 0.028293 |  |  |
+| Pequeno | Tempo p95 (s) |  | 0.028802 |  |  |
+| Grande | Tempo p50 (s) |  | 0.006172 |  |  |
+| Grande | Tempo p95 (s) |  | 0.006186 |  |  |
 
 ---
 
@@ -305,26 +310,26 @@ Marcar o que foi efetivamente testado:
 
 **A-001**
 - **Categoria:** Código / Testabilidade
-- **Severidade:** Média
-- **Descrição objetiva:** E2E bake básico executado, mas falta ampliar cobertura (cenários e assets).
-- **Evidência:** scripts em [scripts/blender_e2e_bake_test.py](scripts/blender_e2e_bake_test.py) e [scripts/run_e2e_bake_test.py](scripts/run_e2e_bake_test.py).
-- **Impacto:** risco de regressões em casos não cobertos.
-- **Causa provável:** testes iniciais limitados.
-- **Recomendação (ação):** adicionar cenários com múltiplos materiais/objetos.
+- **Severidade:** Baixa
+- **Descrição objetiva:** E2E com asset externo executado; faltam apenas cenários adicionais específicos.
+- **Evidência:** scripts em [scripts/blender_e2e_external_asset_test.py](scripts/blender_e2e_external_asset_test.py).
+- **Impacto:** risco reduzido de regressões.
+- **Causa provável:** cobertura ainda não inclui todos os tipos de assets.
+- **Recomendação (ação):** ampliar para outros assets, se necessário.
 - **Validação PASS/FAIL:** geração de texturas válidas em todos os cenários.
-- **Risco de regressão + mitigação:** médio; mitigar com expansão de testes.
+- **Risco de regressão + mitigação:** baixo; manter testes.
 - **Owner sugerido:** Dev/QA
-- **Status:** Em progresso
+- **Status:** Resolvido
 
 **A-002**
 - **Categoria:** Performance
 - **Severidade:** Média
-- **Descrição objetiva:** benchmark executado, mas sem p50/p95 e sem bake real.
+- **Descrição objetiva:** benchmark executado com p50/p95, mas sem bake real em cenas complexas.
 - **Evidência:** scripts em [scripts/blender_perf_benchmark.py](scripts/blender_perf_benchmark.py) e [scripts/run_perf_benchmark.py](scripts/run_perf_benchmark.py); resultados na Seção 8.
 - **Impacto:** incerteza de tempo de bake real.
 - **Causa provável:** medições ainda não executadas em cenários reais.
 - **Recomendação (ação):** rodar benchmark com amostras (p50/p95) e cena de bake real.
-- **Validação PASS/FAIL:** tabela completa com p50/p95.
+- **Validação PASS/FAIL:** tabela completa com p50/p95 e bake real.
 - **Risco de regressão + mitigação:** médio; mitigar com execução periódica.
 - **Owner sugerido:** QA
 - **Status:** Em progresso
@@ -332,15 +337,15 @@ Marcar o que foi efetivamente testado:
 **A-003**
 - **Categoria:** Segurança
 - **Severidade:** Baixa
-- **Descrição objetiva:** saída de arquivos usa path fornecido sem validação.
-- **Evidência:** uso direto de `output_dir` ([grungit/grungit.py](grungit/grungit.py#L703-L732), [grungit/pbrbake.py](grungit/pbrbake.py#L41-L90)).
+- **Descrição objetiva:** validação de `output_dir` adicionada e testada em runtime.
+- **Evidência:** normalização em [grungit/grungit.py](grungit/grungit.py#L44-L72) e [grungit/pbrbake.py](grungit/pbrbake.py#L22-L51); teste em [scripts/blender_output_dir_validation_test.py](scripts/blender_output_dir_validation_test.py).
 - **Impacto:** gravação em paths inválidos/inseguros.
 - **Causa provável:** ausência de sanitização.
-- **Recomendação (ação):** normalizar e validar path.
-- **Validação PASS/FAIL:** testar paths inválidos/relativos.
-- **Risco de regressão + mitigação:** baixo; unit test de path.
+- **Recomendação (ação):** manter teste no CI.
+- **Validação PASS/FAIL:** teste headless com path inválido.
+- **Risco de regressão + mitigação:** baixo; manter teste automatizado.
 - **Owner sugerido:** Dev
-- **Status:** Aberto
+- **Status:** Resolvido
 
 ---
 
@@ -363,7 +368,7 @@ Marcar o que foi efetivamente testado:
 - [ ] Desativar/reativar; confirmar ausência de duplicação
 
 ### Funcionalidade
-- [x] Fluxo principal (E2E-01) PASS (bake headless)
+- [x] Fluxo principal (E2E-01) PASS (bake headless múltiplos objetos)
 - [ ] Fluxos secundários PASS
 - [ ] Undo/Redo PASS
 - [ ] Cancelamento PASS
@@ -392,7 +397,14 @@ Marcar o que foi efetivamente testado:
 | E-002 | Código | [grungit/grungit.py](grungit/grungit.py#L44-L816) | validações e execução do `Grungit` |
 | E-003 | Código | [grungit/pbrbake.py](grungit/pbrbake.py#L13-L120) | validações e bake PBR |
 | E-004 | README | [README.md](README.md#L5-L59) | requisitos, smoke test e benchmark |
-| E-005 | CI | [.github/workflows/ci.yml](.github/workflows/ci.yml) | smoke test e E2E bake no GitHub Actions |
+| E-005 | CI | [.github/workflows/ci.yml](.github/workflows/ci.yml) | smoke test, E2E bake, output_dir, complexa, realista e asset externo |
 | E-006 | Log | scripts/run_smoke_test.py (execução local) | Smoke test OK (Blender 5.0.0) |
 | E-007 | Log | scripts/run_perf_benchmark.py (execução local) | JSON: small=0.0359s, large=0.0078s |
-| E-008 | Log | scripts/run_e2e_bake_test.py (execução local) | E2E bake OK (BakeMat_Grungit.exr) |
+| E-008 | Log | scripts/run_e2e_bake_test.py (execução local) | E2E bake OK (múltiplos objetos) |
+| E-009 | Arquivo | tmp/benchmark_*.json | amostras para p50/p95 |
+| E-010 | Código | [grungit/grungit.py](grungit/grungit.py#L44-L72) | validação de output_dir |
+| E-011 | Código | [grungit/pbrbake.py](grungit/pbrbake.py#L22-L51) | validação de output_dir |
+| E-012 | Log | scripts/run_output_dir_validation_test.py (execução local) | output_dir validation OK |
+| E-013 | Log | scripts/run_e2e_complex_scene_test.py (execução local) | E2E complex OK (5 arquivos) |
+| E-014 | Log | scripts/run_e2e_realistic_scene_test.py (execução local) | E2E realistic OK (7 arquivos) |
+| E-015 | Log | scripts/run_e2e_external_asset_test.py (execução local) | E2E asset OK (1 arquivo) |

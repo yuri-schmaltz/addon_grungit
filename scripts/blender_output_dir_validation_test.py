@@ -1,10 +1,8 @@
-"""Benchmark headless para o Grungit (quick mode)."""
+"""Validação de output_dir para Grungit e PBR Bake."""
 
 # pyright: reportMissingImports=false
 
-import json
 import sys
-import time
 from pathlib import Path
 
 import bpy  # type: ignore
@@ -47,66 +45,59 @@ def reset_scene():
     bpy.ops.object.delete(use_global=False)
 
 
-def create_cube():
+def create_test_mesh():
     bpy.ops.mesh.primitive_cube_add()
     obj = bpy.context.active_object
-    mat = bpy.data.materials.new(name="PerfMat")
+    mat = bpy.data.materials.new(name="PathMat")
     mat.use_nodes = True
-    if not obj.data.materials:
-        obj.data.materials.append(mat)
-    else:
-        obj.data.materials[0] = mat
+    obj.data.materials.append(mat)
     return obj
 
 
-def create_scene(count):
-    objs = []
-    for i in range(count):
-        obj = create_cube()
-        obj.location.x = i * 2.0
-        objs.append(obj)
-    return objs
+def save_temp_blend():
+    repo_root = Path(__file__).resolve().parents[1]
+    tmp_dir = repo_root / "tmp"
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+    blend_path = tmp_dir / "path_validation.blend"
+    bpy.ops.wm.save_mainfile(filepath=str(blend_path))
+    return blend_path
 
 
-def run_grungit_quick():
+def run_grungit_invalid_path():
     scene = bpy.context.scene
-    scene.grungit.quick_mode = True
-    scene.grungit.overall_amount = 0.5
+    scene.render.engine = "CYCLES"
+    scene.grungit.quick_mode = False
+    scene.grungit.output_dir = "//../Invalid/"
     result = bpy.ops.object.grungit()
     if "FINISHED" not in result:
-        raise RuntimeError(f"Grungit falhou: {result}")
+        raise RuntimeError(f"Grungit bake falhou: {result}")
 
 
-def time_run(count):
-    reset_scene()
-    create_scene(count)
-    start = time.perf_counter()
-    run_grungit_quick()
-    end = time.perf_counter()
-    return end - start
+def assert_output_in_default_dir():
+    default_dir = Path(bpy.path.abspath("//Textures/Grungit/")).resolve()
+    if not default_dir.exists():
+        raise RuntimeError("Diretório padrão não foi criado.")
+    exr_files = list(default_dir.glob("*_Grungit.exr"))
+    if not exr_files:
+        raise RuntimeError("Nenhum arquivo de bake encontrado no diretório padrão.")
+    for exr in exr_files:
+        if default_dir not in exr.resolve().parents:
+            raise RuntimeError("Arquivo fora do diretório padrão.")
 
 
 def main():
     ensure_addon_enabled()
-    small = time_run(1)
-    large = time_run(25)
-    output = {
-        "small_objects": 1,
-        "large_objects": 25,
-        "small_seconds": small,
-        "large_seconds": large,
-    }
-    print("BENCHMARK_JSON=" + json.dumps(output))
-    repo_root = Path(__file__).resolve().parents[1]
-    out_dir = repo_root / "tmp"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    out_path = out_dir / f"benchmark_{int(time.time())}.json"
-    out_path.write_text(json.dumps(output, indent=2), encoding="utf-8")
+    reset_scene()
+    create_test_mesh()
+    save_temp_blend()
+    run_grungit_invalid_path()
+    assert_output_in_default_dir()
+    print("output_dir validation OK")
 
 
 if __name__ == "__main__":
     try:
         main()
     except Exception as exc:
-        print(f"Perf benchmark FAIL: {exc}")
+        print(f"output_dir validation FAIL: {exc}")
         sys.exit(1)

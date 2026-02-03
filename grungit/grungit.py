@@ -61,6 +61,26 @@ class Grungit(bpy.types.Operator):
             except Exception:
                 pass
 
+    def normalize_output_dir(self, context, raw_path, default="//Textures/Grungit/"):
+        path = raw_path.strip() if raw_path else default
+        if len(path) == 0:
+            path = default
+        if not path.endswith("/"):
+            path = path + "/"
+        if path.startswith("//"):
+            base_dir = bpy.path.abspath("//")
+            abs_dir = bpy.path.abspath(path)
+            if base_dir and abs_dir:
+                try:
+                    base_norm = os.path.normpath(base_dir)
+                    abs_norm = os.path.normpath(abs_dir)
+                    if os.path.commonpath([base_norm, abs_norm]) != base_norm:
+                        self.report({'WARNING'}, "Grungit: caminho de saída inválido, usando padrão.")
+                        return default
+                except Exception:
+                    return default
+        return path
+
     def ensure_nodegroup(self, context, nodegroup_name):
         if nodegroup_name in bpy.data.node_groups:
             return True
@@ -700,11 +720,7 @@ class Grungit(bpy.types.Operator):
             
         active_object=bpy.context.active_object
         #materials=active_object.material_slots
-        textures_path = context.scene.grungit.output_dir.strip() if context.scene.grungit.output_dir else "//Textures/Grungit/"
-        if len(textures_path) == 0:
-            textures_path = "//Textures/Grungit/"
-        if not textures_path.endswith("/"):
-            textures_path = textures_path + "/"
+        textures_path = Grungit.normalize_output_dir(self, context, context.scene.grungit.output_dir)
         Grungit.debug and print("restore selection in bake????")
         Grungit.restore_selection(self,context,selected_objects)
 

@@ -1,4 +1,4 @@
-"""E2E bake headless para o Grungit (Cycles)."""
+"""E2E bake com materiais mais complexos e multi-user data."""
 
 # pyright: reportMissingImports=false
 
@@ -45,20 +45,63 @@ def reset_scene():
     bpy.ops.object.delete(use_global=False)
 
 
-def create_test_meshes():
+def build_complex_material(name: str):
+    mat = bpy.data.materials.new(name=name)
+    mat.use_nodes = True
+    nodes = mat.node_tree.nodes
+    links = mat.node_tree.links
+
+    bsdf = None
+    out = None
+    for node in nodes:
+        if node.type == "BSDF_PRINCIPLED":
+            bsdf = node
+        if node.type == "OUTPUT_MATERIAL":
+            out = node
+    if not bsdf:
+        bsdf = nodes.new("ShaderNodeBsdfPrincipled")
+    if not out:
+        out = nodes.new("ShaderNodeOutputMaterial")
+    links.new(bsdf.outputs["BSDF"], out.inputs["Surface"])
+
+    noise = nodes.new("ShaderNodeTexNoise")
+    noise.location = (-600, 200)
+    ramp = nodes.new("ShaderNodeValToRGB")
+    ramp.location = (-400, 200)
+    bump = nodes.new("ShaderNodeBump")
+    bump.location = (-200, 0)
+
+    links.new(noise.outputs["Fac"], ramp.inputs["Fac"])
+    links.new(ramp.outputs["Color"], bsdf.inputs["Roughness"])
+    links.new(noise.outputs["Fac"], bump.inputs["Height"])
+    links.new(bump.outputs["Normal"], bsdf.inputs["Normal"])
+
+    if "Clearcoat" in bsdf.inputs:
+        bsdf.inputs["Clearcoat"].default_value = 0.4
+    elif "Coat Weight" in bsdf.inputs:
+        bsdf.inputs["Coat Weight"].default_value = 0.4
+
+    if "Clearcoat Roughness" in bsdf.inputs:
+        bsdf.inputs["Clearcoat Roughness"].default_value = 0.2
+    elif "Coat Roughness" in bsdf.inputs:
+        bsdf.inputs["Coat Roughness"].default_value = 0.2
+
+    return mat
+
+
+def create_objects():
     bpy.ops.mesh.primitive_cube_add()
     obj_a = bpy.context.active_object
-    obj_a.name = "BakeObjA"
-    mat_a = bpy.data.materials.new(name="BakeMatA")
-    mat_a.use_nodes = True
-    obj_a.data.materials.append(mat_a)
+    obj_a.name = "ComplexObjA"
 
-    bpy.ops.mesh.primitive_cube_add(location=(2.5, 0.0, 0.0))
+    bpy.ops.object.duplicate(linked=True)
     obj_b = bpy.context.active_object
-    obj_b.name = "BakeObjB"
-    mat_b = bpy.data.materials.new(name="BakeMatB")
-    mat_b.use_nodes = True
-    obj_b.data.materials.append(mat_b)
+    obj_b.name = "ComplexObjB"
+    obj_b.location.x = 2.5
+
+    mat = build_complex_material("ComplexMat")
+    obj_a.data.materials.append(mat)
+    obj_b.data.materials.append(mat)
 
     bpy.ops.object.select_all(action="DESELECT")
     obj_a.select_set(True)
@@ -71,7 +114,7 @@ def save_temp_blend():
     repo_root = Path(__file__).resolve().parents[1]
     tmp_dir = repo_root / "tmp"
     tmp_dir.mkdir(parents=True, exist_ok=True)
-    blend_path = tmp_dir / "e2e_bake_test.blend"
+    blend_path = tmp_dir / "e2e_complex_scene.blend"
     bpy.ops.wm.save_mainfile(filepath=str(blend_path))
     return blend_path
 
@@ -93,24 +136,24 @@ def find_bake_output():
     if not output_path.exists():
         raise RuntimeError("Diretório de saída não foi criado.")
     exr_files = list(output_path.glob("*_Grungit.exr"))
-    if len(exr_files) < 2:
-        raise RuntimeError("Arquivos de bake insuficientes (esperado >= 2).")
+    if len(exr_files) < 1:
+        raise RuntimeError("Arquivo de bake não encontrado.")
     return exr_files
 
 
 def main():
     ensure_addon_enabled()
     reset_scene()
-    create_test_meshes()
+    create_objects()
     save_temp_blend()
     run_grungit_bake()
     outputs = find_bake_output()
-    print(f"E2E bake OK: {len(outputs)} arquivos")
+    print(f"E2E complex OK: {len(outputs)} arquivos")
 
 
 if __name__ == "__main__":
     try:
         main()
     except Exception as exc:
-        print(f"E2E bake FAIL: {exc}")
+        print(f"E2E complex FAIL: {exc}")
         sys.exit(1)

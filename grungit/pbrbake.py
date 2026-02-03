@@ -33,6 +33,26 @@ class PBRBake(bpy.types.Operator):
             self.report({'ERROR'}, "PBR Bake: Cycles não disponível para bake.")
             return False
         return True
+
+    def normalize_output_dir(self, context, raw_path, default="//Textures/"):
+        path = raw_path.strip() if raw_path else default
+        if len(path) == 0:
+            path = default
+        if not path.endswith("/"):
+            path = path + "/"
+        if path.startswith("//"):
+            base_dir = bpy.path.abspath("//")
+            abs_dir = bpy.path.abspath(path)
+            if base_dir and abs_dir:
+                try:
+                    base_norm = os.path.normpath(base_dir)
+                    abs_norm = os.path.normpath(abs_dir)
+                    if os.path.commonpath([base_norm, abs_norm]) != base_norm:
+                        self.report({'WARNING'}, "PBR Bake: caminho de saída inválido, usando padrão.")
+                        return default
+                except Exception:
+                    return default
+        return path
     
     def pbr_bake(self,context,materials,dir="Textures", create_subdirs = True, resolution = 2048, samples = 3, output_format="PNG", color_depth = 8):
         
@@ -44,11 +64,7 @@ class PBRBake(bpy.types.Operator):
                 if material not in materials_filtered:
                     materials_filtered.append(material)
         pbrbake = context.scene.pbrbake
-        save_dir = pbrbake.output_dir.strip() if pbrbake.output_dir else "//Textures/"
-        if len(save_dir) == 0:
-            save_dir = "//Textures/"
-        if not save_dir.endswith("/"):
-            save_dir = save_dir + "/"
+        save_dir = PBRBake.normalize_output_dir(self, context, pbrbake.output_dir)
         samples = pbrbake.baking_samples
         resolution = int(pbrbake.resolution)
         

@@ -1,4 +1,4 @@
-"""E2E bake headless para o Grungit (Cycles)."""
+"""E2E bake usando asset externo (.blend)."""
 
 # pyright: reportMissingImports=false
 
@@ -40,40 +40,22 @@ def ensure_addon_enabled():
         raise RuntimeError("Falha ao habilitar o add-on Grungit.")
 
 
-def reset_scene():
-    bpy.ops.object.select_all(action="SELECT")
-    bpy.ops.object.delete(use_global=False)
-
-
-def create_test_meshes():
-    bpy.ops.mesh.primitive_cube_add()
-    obj_a = bpy.context.active_object
-    obj_a.name = "BakeObjA"
-    mat_a = bpy.data.materials.new(name="BakeMatA")
-    mat_a.use_nodes = True
-    obj_a.data.materials.append(mat_a)
-
-    bpy.ops.mesh.primitive_cube_add(location=(2.5, 0.0, 0.0))
-    obj_b = bpy.context.active_object
-    obj_b.name = "BakeObjB"
-    mat_b = bpy.data.materials.new(name="BakeMatB")
-    mat_b.use_nodes = True
-    obj_b.data.materials.append(mat_b)
-
-    bpy.ops.object.select_all(action="DESELECT")
-    obj_a.select_set(True)
-    obj_b.select_set(True)
-    bpy.context.view_layer.objects.active = obj_a
-    return [obj_a, obj_b]
-
-
-def save_temp_blend():
+def open_asset():
     repo_root = Path(__file__).resolve().parents[1]
-    tmp_dir = repo_root / "tmp"
-    tmp_dir.mkdir(parents=True, exist_ok=True)
-    blend_path = tmp_dir / "e2e_bake_test.blend"
-    bpy.ops.wm.save_mainfile(filepath=str(blend_path))
-    return blend_path
+    asset_path = repo_root / "assets" / "space_truck.blend"
+    if not asset_path.exists():
+        raise RuntimeError("Asset space_truck.blend não encontrado em assets/.")
+    bpy.ops.wm.open_mainfile(filepath=str(asset_path))
+
+
+def select_all_meshes():
+    bpy.ops.object.select_all(action="DESELECT")
+    meshes = [obj for obj in bpy.context.scene.objects if obj.type == "MESH"]
+    if not meshes:
+        raise RuntimeError("Nenhuma malha encontrada no asset.")
+    for obj in meshes:
+        obj.select_set(True)
+    bpy.context.view_layer.objects.active = meshes[0]
 
 
 def run_grungit_bake():
@@ -93,24 +75,23 @@ def find_bake_output():
     if not output_path.exists():
         raise RuntimeError("Diretório de saída não foi criado.")
     exr_files = list(output_path.glob("*_Grungit.exr"))
-    if len(exr_files) < 2:
-        raise RuntimeError("Arquivos de bake insuficientes (esperado >= 2).")
+    if len(exr_files) < 1:
+        raise RuntimeError("Arquivo de bake não encontrado.")
     return exr_files
 
 
 def main():
     ensure_addon_enabled()
-    reset_scene()
-    create_test_meshes()
-    save_temp_blend()
+    open_asset()
+    select_all_meshes()
     run_grungit_bake()
     outputs = find_bake_output()
-    print(f"E2E bake OK: {len(outputs)} arquivos")
+    print(f"E2E asset OK: {len(outputs)} arquivos")
 
 
 if __name__ == "__main__":
     try:
         main()
     except Exception as exc:
-        print(f"E2E bake FAIL: {exc}")
+        print(f"E2E asset FAIL: {exc}")
         sys.exit(1)

@@ -26,3 +26,19 @@ jobs:
       - name: Run E2E bake test
         run: |
           python scripts/run_e2e_bake_test.py
+
+      - name: Run output_dir validation
+        run: |
+          python scripts/run_output_dir_validation_test.py
+
+      - name: Run E2E complex scene
+        run: |
+          python scripts/run_e2e_complex_scene_test.py
+
+      - name: Run E2E realistic scene
+        run: |
+          python scripts/run_e2e_realistic_scene_test.py
+
+      - name: Run E2E external asset
+        run: |
+          python scripts/run_e2e_external_asset_test.py

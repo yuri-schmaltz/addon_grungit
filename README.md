@@ -66,6 +66,39 @@ O script imprime um JSON com tempo para cena pequena (1 objeto) e grande (25 obj
 
 O teste salva um .blend temporário, executa bake real e valida o arquivo *_Grungit.exr.
 
+## Validação de output_dir (headless)
+
+1. Defina `BLENDER_BIN` apontando para o executável do Blender.
+2. Execute:
+	- `python scripts/run_output_dir_validation_test.py`
+
+O teste passa um caminho inválido e valida que o output é gravado no diretório padrão.
+
+## E2E bake com cena complexa
+
+1. Defina `BLENDER_BIN` apontando para o executável do Blender.
+2. Execute:
+	- `python scripts/run_e2e_complex_scene_test.py`
+
+O teste cria materiais com nós de roughness/normal e objetos multi-user.
+
+## E2E bake com cena realista
+
+1. Defina `BLENDER_BIN` apontando para o executável do Blender.
+2. Execute:
+	- `python scripts/run_e2e_realistic_scene_test.py`
+
+O teste cria objetos com modifiers, múltiplos materiais e texturas geradas.
+
+## E2E bake com asset externo
+
+1. Coloque o arquivo assets/space_truck.blend.
+2. Defina `BLENDER_BIN` apontando para o executável do Blender.
+3. Execute:
+	- `python scripts/run_e2e_external_asset_test.py`
+
+O teste abre o .blend externo, seleciona todas as malhas e executa o bake.
+
 ## Estrutura do projeto
 
 - grungit/grungit.py: operador principal e bake de grunge
