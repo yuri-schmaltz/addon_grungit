@@ -39,12 +39,13 @@ Os arquivos são salvos em //Textures/ (pasta relativa ao .blend).
 - “Data files missing”: reinstale o add-on e verifique grungit/grungit_data.
 - “Save the .blend file”: o bake precisa de um arquivo salvo.
 - Sem materiais: o add-on ignora slots vazios ou não usados.
+- Aviso “does not support blend relative // prefix”: mensagem do Blender ao usar caminhos relativos; o add-on normaliza o output.
 
 ## Teste headless (smoke test)
 
 Requer Blender instalado localmente.
 
-1. Defina a variável de ambiente `BLENDER_BIN` apontando para o executável do Blender.
+1. Defina a variável de ambiente `BLENDER_BIN` apontando para o executável do Blender (ex.: `C:\\Blender\\blender.exe`).
 2. Execute o script:
 	- `python scripts/run_smoke_test.py`
 
@@ -92,12 +93,20 @@ O teste cria objetos com modifiers, múltiplos materiais e texturas geradas.
 
 ## E2E bake com asset externo
 
-1. Coloque o arquivo assets/space_truck.blend.
+1. Verifique se o arquivo assets/space_truck.blend existe.
 2. Defina `BLENDER_BIN` apontando para o executável do Blender.
 3. Execute:
 	- `python scripts/run_e2e_external_asset_test.py`
 
 O teste abre o .blend externo, seleciona todas as malhas e executa o bake.
+
+## Assets de teste
+
+- assets/space_truck.blend: usado nos testes E2E com asset externo.
+
+## CI (GitHub Actions)
+
+O workflow em .github/workflows/ci.yml executa smoke test e os E2E headless.
 
 ## Estrutura do projeto
 

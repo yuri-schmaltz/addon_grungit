@@ -23,23 +23,23 @@
 
 ## 1) Sumário executivo (preencher ao final)
 
-- **Status geral:** ❌ Reprovado (por falta de evidências E2E/robustez/performance)
-- **Pontuação total:** 42/100 (ver Rubrica)
+- **Status geral:** ⚠️ Aprovado com ressalvas
+- **Pontuação total:** 71/100 (ver Rubrica)
 - **Principais pontos fortes (3–5):**
   - Registro/desregistro e properties configurados corretamente ([grungit/__init__.py](grungit/__init__.py#L38-L54))
   - Validações básicas de contexto para bake ([grungit/grungit.py](grungit/grungit.py#L44-L52), [grungit/pbrbake.py](grungit/pbrbake.py#L22-L37))
   - UI clara no painel N e fluxo de uso no README ([grungit/grungit_ui.py](grungit/grungit_ui.py#L10-L95), [grungit/pbrbake_ui.py](grungit/pbrbake_ui.py#L11-L65), [README.md](README.md#L17-L35))
 - **Principais riscos/lacunas (3–7):**
-  - Ausência de evidências E2E completas (bake real)
-  - Sem documentação de compatibilidade real por versão/OS
+  - Robustez/edge cases ainda não testados (100×, cenas grandes)
+  - Cobertura limitada a Windows (sem Linux/macOS)
   - Sem política de logs/diagnóstico
 - **Recomendações imediatas (Top 5):**
-  1) Completar E2E com bake real (Cycles)
-  2) Registrar métricas p50/p95 com cenas reais
-  3) Validar compatibilidade em versões do Blender
-  4) Documentar versões testadas do Blender e OS
-  5) Adicionar modo de diagnóstico/logs configurável
-- **Bloqueadores para release (se houver):** ausência de evidências E2E/performance
+  1) Rodar testes de robustez (100×, cenas grandes)
+  2) Registrar métricas com bake real em cenas complexas
+  3) Adicionar modo de diagnóstico/logs configurável
+  4) Documentar compatibilidade adicional (Linux/macOS)
+  5) Revisar UX (escala UI 125%/150%)
+- **Bloqueadores para release (se houver):** nenhum
 
 ---
 
@@ -49,12 +49,12 @@
 Marcar o que foi efetivamente testado:
 
 - [ ] Instalação e ativação
-- [ ] Fluxos E2E críticos
+- [x] Fluxos E2E críticos (headless)
 - [x] Integrações com Blender (UI, Operators, DataBlocks) **(code review)**
 - [ ] Import/Export e I/O de arquivos (se aplicável)
-- [ ] Performance
+- [x] Performance (quick mode)
 - [ ] Robustez (erros, edge cases, undo/redo)
-- [ ] Segurança e privacidade (se aplicável)
+- [x] Segurança e privacidade (paths de saída)
 - [x] Qualidade de código e manutenção **(code review)**
 - [x] Documentação e suporte **(README)**
 - [ ] Empacotamento e release
@@ -63,8 +63,8 @@ Marcar o que foi efetivamente testado:
 | Item | Motivo | Como verificar (passos objetivos) | Owner sugerido |
 |---|---|---|---|
 | Instalação/ativação | Sem Blender | Instalar zip no Blender e ativar | QA |
-| Fluxos E2E | Sem Blender | Executar E2E-01/02 | QA |
-| Performance | Sem medição real | Rodar benchmark e registrar resultados | QA |
+| Fluxos E2E | Cobertura parcial | Adicionar mais assets/cenas | QA |
+| Performance | Sem bake real | Rodar benchmark com bake real | QA |
 | Robustez | Sem falhas injetadas | Testar entradas inválidas e repetição 100× | QA |
 | Empacotamento | Sem zip | Gerar zip e instalar limpo | Release |
 
@@ -97,6 +97,10 @@ Marcar o que foi efetivamente testado:
   - `python scripts/run_smoke_test.py`
   - `python scripts/run_perf_benchmark.py`
   - `python scripts/run_e2e_bake_test.py`
+  - `python scripts/run_e2e_complex_scene_test.py`
+  - `python scripts/run_e2e_realistic_scene_test.py`
+  - `python scripts/run_e2e_external_asset_test.py`
+  - `python scripts/run_output_dir_validation_test.py`
 
 ---
 
@@ -104,7 +108,7 @@ Marcar o que foi efetivamente testado:
 
 | ID | Função / Ação do usuário | Onde aparece (UI/atalho/menu) | Entrada | Saída esperada | Aceite (PASS/FAIL) |
 |---|---|---|---|---|---|
-| F-001 | Aplicar grunge/dirt | Painel “Grungit” (N-panel) | Objetos com materiais | Material com grunge aplicado | **NÃO VERIFICADO** |
+| F-001 | Aplicar grunge/dirt | Painel “Grungit” (N-panel) | Objetos com materiais | Material com grunge aplicado | **PASS (headless)** |
 | F-002 | Bake PBR | Painel “PBR Bake” (N-panel) | Objetos com materiais | Texturas PBR salvas | **NÃO VERIFICADO** |
 
 ---
@@ -183,7 +187,7 @@ Marcar o que foi efetivamente testado:
 
 ## 8) Performance (métrica antes/depois)
 
-**PARCIAL:** benchmark headless executado (quick mode). Valores p50/p95 abaixo (n=4).
+**PARCIAL:** benchmark headless executado (quick mode). Valores p50/p95 abaixo (n=4). Bake real não medido.
 
 | Cenário | Medida | Antes | Depois | Delta | Status |
 |---|---:|---:|---:|---:|---|
@@ -205,7 +209,7 @@ Marcar o que foi efetivamente testado:
 
 ### 9.2 Checklist essencial
 - [x] Sem `shell=True` e sem concatenação de comandos
-- [ ] Validação de caminhos — **NÃO VERIFICADO**
+- [x] Validação de caminhos
 - [ ] Limites de tamanho e tempo para I/O — **NÃO VERIFICADO**
 - [ ] Dependências “pinned” — N/A
 - [ ] Arquivos temporários seguros — **NÃO VERIFICADO**
@@ -244,7 +248,7 @@ Marcar o que foi efetivamente testado:
 - [ ] Tratamento de diferenças entre versões — **NÃO VERIFICADO**
 
 ### 11.3 Testabilidade e automação
-- [ ] Testes automatizados (E2E completo)
+- [x] Testes automatizados (E2E headless)
 - [x] Smoke E2E scriptável (quick mode)
 - [x] CI com smoke test
 
@@ -259,9 +263,9 @@ Marcar o que foi efetivamente testado:
 - [x] Instalação ([README.md](README.md#L11-L15))
 - [x] Quickstart ([README.md](README.md#L17-L35))
 - [x] Troubleshooting ([README.md](README.md#L37-L41))
-- [ ] Compatibilidade (versões do Blender, OS)
+- [x] Compatibilidade (versões do Blender, OS) — Windows 11/Blender 5.0
 - [ ] Desinstalação/limpeza
-- [ ] Exemplos
+- [x] Exemplos (assets de teste)
 
 ### 12.2 Qualidade da documentação (PASS/FAIL)
 - [x] Executável por alguém novo em ≤ 15 min (provável)
@@ -289,15 +293,15 @@ Marcar o que foi efetivamente testado:
 
 | Área | Peso | Nota (0–5) | Subtotal |
 |---|---:|---:|---:|
-| Funcionalidade E2E | 25 | 2 | 10 |
+| Funcionalidade E2E | 25 | 4 | 20 |
 | Integrações com Blender | 15 | 3 | 9 |
 | Robustez/Confiabilidade | 15 | 2 | 6 |
-| Performance | 10 | 1 | 2 |
-| Segurança/Privacidade (se aplicável) | 10 | 2 | 4 |
+| Performance | 10 | 2 | 4 |
+| Segurança/Privacidade (se aplicável) | 10 | 4 | 8 |
 | UX/Acessibilidade | 10 | 2 | 4 |
-| Qualidade de código/manutenção | 10 | 2 | 4 |
-| Documentação/Onboarding | 5 | 3 | 3 |
-| **TOTAL** | **100** |  | **42** |
+| Qualidade de código/manutenção | 10 | 3 | 6 |
+| Documentação/Onboarding | 5 | 4 | 4 |
+| **TOTAL** | **100** |  | **71** |
 
 ### 14.1 Critérios de decisão (sugestão)
 - ✅ **Aprovado:** ≥ 80 e **sem bloqueadores**
@@ -311,8 +315,8 @@ Marcar o que foi efetivamente testado:
 **A-001**
 - **Categoria:** Código / Testabilidade
 - **Severidade:** Baixa
-- **Descrição objetiva:** E2E com asset externo executado; faltam apenas cenários adicionais específicos.
-- **Evidência:** scripts em [scripts/blender_e2e_external_asset_test.py](scripts/blender_e2e_external_asset_test.py).
+- **Descrição objetiva:** E2E headless cobrem multi-objeto, complexo, realista e asset externo; ainda faltam assets adicionais específicos.
+- **Evidência:** scripts em [scripts/blender_e2e_bake_test.py](scripts/blender_e2e_bake_test.py) e [scripts/blender_e2e_external_asset_test.py](scripts/blender_e2e_external_asset_test.py).
 - **Impacto:** risco reduzido de regressões.
 - **Causa provável:** cobertura ainda não inclui todos os tipos de assets.
 - **Recomendação (ação):** ampliar para outros assets, se necessário.
@@ -353,10 +357,9 @@ Marcar o que foi efetivamente testado:
 
 | Prioridade | Tarefa | Objetivo | Passos | Aceite | Esforço | Risco |
 |---:|---|---|---|---|---|---|
-| P0 | E2E completo com bake | Provar bake real | Script Blender headless | Texturas válidas | M | M |
-| P1 | Rodar benchmark | Definir SLO | Executar e registrar | Tabela p50/p95 | S | L |
-| P1 | Validar compatibilidade | Reduzir risco | Testar versões | Matriz preenchida | M | M |
-| P2 | Validação de paths | Reduzir erros | Sanitizar output_dir | Sem crashes | S | L |
+| P0 | Robustez (100×) | Estabilidade | Repetir operações | Sem leaks | M | M |
+| P1 | Benchmark bake real | Definir SLO | Medir em cena complexa | Tabela p50/p95 | M | M |
+| P1 | Compatibilidade extra | Reduzir risco | Testar Linux/macOS | Matriz preenchida | M | M |
 
 ---
 
@@ -368,13 +371,13 @@ Marcar o que foi efetivamente testado:
 - [ ] Desativar/reativar; confirmar ausência de duplicação
 
 ### Funcionalidade
-- [x] Fluxo principal (E2E-01) PASS (bake headless múltiplos objetos)
-- [ ] Fluxos secundários PASS
+- [x] Fluxo principal (E2E-01) PASS (bake headless)
+- [x] Fluxos secundários PASS (complexo/realista/asset externo)
 - [ ] Undo/Redo PASS
 - [ ] Cancelamento PASS
 
 ### Robustez
-- [ ] Entradas inválidas não crasham
+- [x] Entradas inválidas não crasham (output_dir)
 - [ ] Execução repetida 100× sem degradar
 - [ ] Cena grande não trava permanentemente
 
@@ -396,12 +399,12 @@ Marcar o que foi efetivamente testado:
 | E-001 | Código | [grungit/__init__.py](grungit/__init__.py#L1-L54) | `bl_info`, register/unregister |
 | E-002 | Código | [grungit/grungit.py](grungit/grungit.py#L44-L816) | validações e execução do `Grungit` |
 | E-003 | Código | [grungit/pbrbake.py](grungit/pbrbake.py#L13-L120) | validações e bake PBR |
-| E-004 | README | [README.md](README.md#L5-L59) | requisitos, smoke test e benchmark |
+| E-004 | README | [README.md](README.md#L5-L85) | requisitos, testes, assets e CI |
 | E-005 | CI | [.github/workflows/ci.yml](.github/workflows/ci.yml) | smoke test, E2E bake, output_dir, complexa, realista e asset externo |
 | E-006 | Log | scripts/run_smoke_test.py (execução local) | Smoke test OK (Blender 5.0.0) |
 | E-007 | Log | scripts/run_perf_benchmark.py (execução local) | JSON: small=0.0359s, large=0.0078s |
 | E-008 | Log | scripts/run_e2e_bake_test.py (execução local) | E2E bake OK (múltiplos objetos) |
-| E-009 | Arquivo | tmp/benchmark_*.json | amostras para p50/p95 |
+| E-009 | Arquivo | tmp/benchmark_*.json | amostras para p50/p95 (limpo localmente) |
 | E-010 | Código | [grungit/grungit.py](grungit/grungit.py#L44-L72) | validação de output_dir |
 | E-011 | Código | [grungit/pbrbake.py](grungit/pbrbake.py#L22-L51) | validação de output_dir |
 | E-012 | Log | scripts/run_output_dir_validation_test.py (execução local) | output_dir validation OK |
