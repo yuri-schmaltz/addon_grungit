@@ -1,0 +1,4 @@
+{
+  "github-actions.validate.actions": false,
+  "github-actions.validate.workflow": false
+}

@@ -1,0 +1,13 @@
+name: local-checkout
+description: "Checkout repository without external actions"
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout
+      shell: bash
+      run: |
+        set -euo pipefail
+        git init
+        git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+        git fetch --depth=1 origin "${GITHUB_REF}"
+        git checkout FETCH_HEAD

@@ -5,7 +5,7 @@
 import sys
 from pathlib import Path
 
-import bpy
+import bpy  # type: ignore
 
 ADDON_MODULE = "grungit"
 NODEGROUPS = {"Grungit v1.9.1", "Grungit Dirt v1.9.1"}
