@@ -26,7 +26,7 @@ class Grungit(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     active_object = None
-    selected_objects = []
+    selected_objects: list = []
     UV_layer_name="Grungit"
     baker_node= "Baker v1.8.3"
     grungit_node = "Grungit v1.9.1"
