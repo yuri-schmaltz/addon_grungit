@@ -721,6 +721,7 @@ class Grungit(bpy.types.Operator):
         active_object=bpy.context.active_object
         #materials=active_object.material_slots
         textures_path = Grungit.normalize_output_dir(self, context, context.scene.grungit.output_dir)
+        textures_path_abs = bpy.path.abspath(textures_path)
         Grungit.debug and print("restore selection in bake????")
         Grungit.restore_selection(self,context,selected_objects)
 
@@ -736,12 +737,11 @@ class Grungit(bpy.types.Operator):
         bpy.context.scene.cycles.samples = baking_samples
         bpy.context.scene.cycles.bake_type = "EMIT"
         bpy.context.scene.render.bake.margin = 2
-        
+
         #Object get deselected for some reason. Investigate!
         if active_object:
             bpy.context.view_layer.objects.active = active_object
             active_object.select_set(True)
-
 
         # temp_bake_object = Grungit.merge_selected(self,context,selected_objects)
         # Hide everything except temp_bake_object
@@ -760,9 +760,14 @@ class Grungit(bpy.types.Operator):
         #image_settings.exr_codec = "ZIP"
         image_settings.exr_codec = "DWAA"
 
-        if not os.path.exists(bpy.path.abspath(textures_path)):
-            os.makedirs(bpy.path.abspath(textures_path))
-        
+        # Garante que o diretório existe e é absoluto
+        try:
+            if not os.path.exists(textures_path_abs):
+                os.makedirs(textures_path_abs)
+        except Exception as exc:
+            self.report({'ERROR'}, f"Grungit: não foi possível criar o diretório de saída: {textures_path_abs} ({exc})")
+            return {'CANCELLED'}
+
         for material in materials:
             material_name = material.name
             #sanitize name
@@ -771,10 +776,14 @@ class Grungit(bpy.types.Operator):
             if grungit_image_name not in bpy.data.images:
                 continue
             grungit_image = bpy.data.images[grungit_image_name] 
-            grungit_image.save_render(bpy.path.abspath(textures_path)+ grungit_image_name+".exr")
-            grungit_image.source = "FILE"
-            grungit_image.filepath=bpy.path.abspath(textures_path)+ grungit_image_name+".exr"
             try:
+                save_path = os.path.join(textures_path_abs, grungit_image_name+".exr")
+                grungit_image.save_render(save_path)
+                grungit_image.source = "FILE"
+                grungit_image.filepath = save_path
+            except Exception as exc:
+                self.report({'ERROR'}, f"Grungit: erro ao salvar a textura {grungit_image_name}: {exc}")
+                continue
                 grungit_image.colorspace_settings.name="Non-Color"
             except TypeError:
                 grungit_image.colorspace_settings.name="Utility - Linear - sRGB"
