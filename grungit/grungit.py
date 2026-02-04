@@ -820,6 +820,11 @@ class Grungit(bpy.types.Operator):
         if not Grungit.active_object or Grungit.active_object.type != "MESH":
             bpy.context.view_layer.objects.active = selected_objects[0]
             Grungit.active_object = bpy.context.active_object
+        # Validação: todos os objetos devem ter pelo menos um material
+        for obj in selected_objects:
+            if not getattr(obj.data, 'materials', None) or len(obj.data.materials) == 0:
+                self.report({'WARNING'}, f"Grungit: o objeto '{obj.name}' não possui material. Adicione um material antes de aplicar o bake.")
+                return {'CANCELLED'}
         Grungit.create_materials(self,context,selected_objects)
         make_single_user = context.scene.grungit.make_single_user
         ignore_unused = context.scene.grungit.ignore_unused
