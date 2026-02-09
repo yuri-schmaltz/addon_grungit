@@ -10,33 +10,41 @@ def ensure_addon_enabled():
     prefs = bpy.context.preferences
     if ADDON_MODULE in prefs.addons:
         return
+    
+    # Se já tem as propriedades na cena, provavelmente já está registrado
+    if hasattr(bpy.types.Scene, "grungit"):
+        return
+
     try:
         bpy.ops.preferences.addon_enable(module=ADDON_MODULE)
     except Exception:
         pass
-    if ADDON_MODULE in prefs.addons:
+    
+    if ADDON_MODULE in prefs.addons or hasattr(bpy.types.Scene, "grungit"):
         return
+
     repo_root = Path(__file__).resolve().parents[1]
     if str(repo_root) not in sys.path:
         sys.path.insert(0, str(repo_root))
     try:
         module = __import__(ADDON_MODULE)
         if hasattr(module, "register"):
-            module.register()
+            try:
+                module.register()
+            except ValueError as e:
+                if "already registered" in str(e):
+                    pass
+                else:
+                    raise
     except Exception as exc:
-        raise RuntimeError(f"Falha ao habilitar o add-on Grungit: {exc}") from exc
-    if ADDON_MODULE in prefs.addons:
-        return
-    if not hasattr(bpy.types.Scene, "grungit"):
-        raise RuntimeError("Falha ao habilitar o add-on Grungit.")
+        if "already registered" not in str(exc):
+            raise RuntimeError(f"Falha ao habilitar o add-on Grungit: {exc}") from exc
 
-# Importa e registra o módulo grungit manualmente se não estiver ativado
+# Tenta importar grungit para garantir que está no path, mas evita registrar se já estiver ok
 try:
     import grungit
-    if hasattr(grungit, "register"):
-        grungit.register()
 except Exception as exc:
-    print(f"[WARN] Falha ao importar/registrar grungit: {exc}")
+    print(f"[WARN] Falha ao importar grungit: {exc}")
 
 def main():
     ensure_addon_enabled()
@@ -57,12 +65,12 @@ def main():
     tmp_dir.mkdir(parents=True, exist_ok=True)
     blend_path = tmp_dir / "integrity_test.blend"
     bpy.ops.wm.save_mainfile(filepath=str(blend_path))
-    # Executa o bake
-    result = bpy.ops.object.grungit()
     # Força o output_dir para um caminho absoluto e existente
     output_dir = tmp_dir / "integrity_output"
     output_dir.mkdir(parents=True, exist_ok=True)
     bpy.context.scene.grungit.output_dir = str(output_dir)
+    # Executa o bake
+    result = bpy.ops.object.grungit()
     # Verifica se arquivos de textura foram gerados
     if not output_dir.is_absolute():
         output_dir = (repo_root / output_dir).resolve()
