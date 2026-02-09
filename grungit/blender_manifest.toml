@@ -1,0 +1,14 @@
+schema_version = "1.0.0"
+id = "grungit"
+version = "1.9.2"
+name = "Grungit"
+tagline = "1-click wear and tear for Blender"
+maintainer = "Abdou Bouam <author@email.com>"
+type = "add-on"
+website = "https://github.com/yuri-schmaltz/addon-grungit"
+license = ["GPL-3.0-or-later"]
+blender_version_min = "4.2.0"
+
+[permissions]
+files = "Full access to your hard drive is required to save bakes"
+network = "Not required"
